@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from util import Sym, TD
+from .util import Sym, TD
 
 DISPLAY = [Sym("define"), [Sym("display"), Sym("object")], [TD("display"),
         Sym("object")]]

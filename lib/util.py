@@ -66,7 +66,7 @@ class Token(object):
             if not self.value: return "#f"
             return "#t"
         elif self.type == "3d-symbol": return self.value
-        else: raise LogicError, "Unknown type: %s" % self.type
+        else: raise LogicError("Unknown type: %s" % self.type)
     def isSymbol(self, symbol):
         return self.type == "symbol" and self.value == symbol
     def __hash__(self):

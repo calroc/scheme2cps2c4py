@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-from util import LazyList, Token, ParserError, LogicError
+from .util import LazyList, Token, ParserError, LogicError
 import re
-from cStringIO import StringIO
+from io import StringIO
 
 WHITESPACE = re.compile(r'^[\n\r \t]$')
 
@@ -28,8 +28,8 @@ def read(lst):
         if lst.head() == start_char:
             item, lst = read_list(lst.tail())
             if lst.head() != end_char:
-                raise ParserError, "Line %d: Missing %s" % (lst.lineno(),
-                        end_char)
+                raise ParserError("Line %d: Missing %s" % (lst.lineno(),
+                        end_char))
             return item, lst.tail()
 
     # single line comments
@@ -46,7 +46,7 @@ def read(lst):
         while True:
             lst = lst.tail()
             if lst.eof():
-                raise ParserError, "Line %d: Missing !#" % lst.lineno()
+                raise ParserError("Line %d: Missing !#" % lst.lineno())
             if lst.head() == "#" and lst.tail().head() == "!":
                 depth += 1
                 lst = lst.tail()
@@ -73,7 +73,7 @@ def read(lst):
         while True:
             lst = lst.tail()
             if lst.eof():
-                raise ParserError, "Line %d: Missing \"" % lst.lineno()
+                raise ParserError("Line %d: Missing \"" % lst.lineno())
             if lst.head() == '"': break
             if lst.head() == "\\" and not lst.tail().eof():
                 lst = lst.tail()
@@ -81,7 +81,7 @@ def read(lst):
                 elif lst.head() == '"': val += '"'
                 elif lst.head() == "\\": val += "\\"
                 else:
-                    raise ParserError, ("Line %d: Invalid escape sequence: "
+                    raise ParserError("Line %d: Invalid escape sequence: "
                             "\\%s" % (lst.lineno(), lst.head()))
                 continue
             val += lst.head()
@@ -110,16 +110,16 @@ def read(lst):
         if lst.head() == "#" and lst.tail().head() == "\\":
             lst = lst.tail().tail()
             if lst.eof():
-                raise ParserError, "Line %d: Missing character" % lst.lineno()
+                raise ParserError("Line %d: Missing character" % lst.lineno())
         val += lst.head()
         lst = lst.tail()
-    if not val: raise LogicError, "no symbol?"
+    if not val: raise LogicError("no symbol?")
     return Token("symbol", val), lst
 
 def parse(input):
     if not hasattr(input, "read"): input = StringIO(input)
     sexps, lst = read_list(LazyList(input))
-    if not lst.eof(): raise LogicError, "didn't parse whole file?"
+    if not lst.eof(): raise LogicError("didn't parse whole file?")
     return sexps
 
 def serialize(node):

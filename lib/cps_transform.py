@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-from parse_tree import Exp, Variable, Literal, Application, Begin, If, Lambda, \
+from .parse_tree import Exp, Variable, Literal, Application, Begin, If, Lambda, \
         SetBang
 
 def gensym(cache={}):
-    if not cache.has_key("counter"):
+    if "counter" not in cache:
         cache["counter"] = 0
     cache["counter"] += 1
     return Variable("gensym-%d" % cache["counter"], True)
@@ -14,16 +14,16 @@ def curry(exp):
     if type(exp) == Literal: return exp
     if type(exp) == Application:
         if exp.special():
-            return Application(exp.function, *map(curry, exp.args))
+            return Application(exp.function, *list(map(curry, exp.args)))
         function = curry(exp.function)
-        args = map(curry, exp.args)
+        args = list(map(curry, exp.args))
         if not args: return Application(function, Literal("boolean", False))
         app = function
         for arg in args:
             app = Application(app, arg)
         return app
     if type(exp) == Begin:
-        return Begin(map(curry, exp.instructions))
+        return Begin(list(map(curry, exp.instructions)))
     if type(exp) == If:
         return If(curry(exp.test), curry(exp.true), curry(exp.false))
     if type(exp) == Lambda:
@@ -79,4 +79,4 @@ def cps_transform(node, continuation=None):
         return cps_transform(node.test, Lambda([var],
                 If(var, cps_transform(node.true, continuation),
                         cps_transform(node.false, continuation))))
-    raise LogicError, "huh?"
+    raise LogicError("huh?")

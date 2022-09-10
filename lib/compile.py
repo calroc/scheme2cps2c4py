@@ -1,17 +1,17 @@
 #!/usr/bin/env python
 
-from sexp_io import parse, serialize
-from desugar import desugar
-from cps_transform import cps_transform, curry
-from primitives import wrap, PRIMITIVE_NAMES
-from parse_tree import structure, Variable, If, Begin, Application, Lambda, \
+from .sexp_io import parse, serialize
+from .desugar import desugar
+from .cps_transform import cps_transform, curry
+from .primitives import wrap, PRIMITIVE_NAMES
+from .parse_tree import structure, Variable, If, Begin, Application, Lambda, \
         Literal, SetBang
-from lift import rename, find_lambdas
-from util import ParserError, LogicError, c_format
-from cStringIO import StringIO
-from constants import HEADER, STARTMAIN, ENDMAIN, CALLFUNC, GRANDCENTRAL, \
+from .lift import rename, find_lambdas
+from .util import ParserError, LogicError, c_format
+from io import StringIO
+from .constants import HEADER, STARTMAIN, ENDMAIN, CALLFUNC, GRANDCENTRAL, \
         ENABLE_GC
-import gflags
+from . import gflags
 
 FLAGS = gflags.FLAGS
 gflags.DEFINE_boolean("curry", False, "If True, curries all functions.")
@@ -62,7 +62,7 @@ def write_primitive(thing, helper):
         assert len(thing.args) == 2
         return "prim_lessthan(%s, %s)" % (
                 helper(thing.args[0]), helper(thing.args[1]))
-    raise LogicError, "unknown primitive!"
+    raise LogicError("unknown primitive!")
 
 def write(thing, name, mutable_vars):
     helper = lambda x: write(x, name, mutable_vars)
@@ -85,7 +85,7 @@ def write(thing, name, mutable_vars):
             return "MakeBoolean(0)"
         if thing.type == "string":
             return "MakeString(%s)" % thing
-        raise LogicError, "shouldn't have gotten here"
+        raise LogicError("shouldn't have gotten here")
     if type(thing) == Application:
         if thing.special():
             return write_primitive(thing, helper)
@@ -102,7 +102,7 @@ def write(thing, name, mutable_vars):
         return "((%s = %s), %s)" % (helper(thing.instructions[0].var),
                 helper(thing.instructions[0].val),
                 helper(thing.instructions[1]))
-        raise Exception, "incomplete"
+        raise Exception("incomplete")
     if type(thing) == If:
         return "(isTrue(%s) ? (%s) : (%s))" % (helper(thing.test),
                 helper(thing.true), helper(thing.false))
@@ -110,7 +110,7 @@ def write(thing, name, mutable_vars):
         return "MakeClosure(&&%s, alloc_env_%s(%s))" % (thing.name, thing.name,
                 ", ".join(write(arg, name, set())
                 for arg in thing.freeVariables()))
-    raise LogicError, "shouldn't have gotten here"
+    raise LogicError("shouldn't have gotten here")
 
 def compile(input):
     program = parse_program(input)
@@ -174,12 +174,12 @@ def main():
     args = FLAGS(sys.argv)
     sys.setrecursionlimit(FLAGS.recursion_limit)
     if FLAGS.output == "c":
-        if FLAGS.gc: print ENABLE_GC
-        print compile(sys.stdin)
+        if FLAGS.gc: print(ENABLE_GC)
+        print(compile(sys.stdin))
     elif FLAGS.output == "cps":
-        print "(define (halt x) x)"
-        print parse_program(sys.stdin)
+        print("(define (halt x) x)")
+        print(parse_program(sys.stdin))
     else:
-        raise Exception, "Unknown output type requested!"
+        raise Exception("Unknown output type requested!")
 
 if __name__ == "__main__": main()

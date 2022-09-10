@@ -3,15 +3,15 @@
 # so, i'm dumb. my parse tree up to this point sucks, so I'm going to rewrite it
 # in this module
 
-from util import Token, LogicError, c_format
-from desugar import KEYWORDS
-from primitives import PRIMITIVE_NAMES
+from .util import Token, LogicError, c_format
+from .desugar import KEYWORDS
+from .primitives import PRIMITIVE_NAMES
 
 class Exp(object): pass
 
 class Variable(Exp):
     def __init__(self, name, three_d):
-        assert type(name) in (str, unicode)
+        assert type(name) in (str, str)
         assert type(three_d) == bool
         self.name, self.three_d = name, three_d
     def __repr__(self):
@@ -33,14 +33,14 @@ class Variable(Exp):
 
 class Literal(Exp):
     def __init__(self, type_, value):
-        assert type(type_) in (str, unicode)
+        assert type(type_) in (str, str)
         assert type_ in ("symbol", "string", "integer", "boolean")
         if type_ == "string":
-            assert type(value) in (str, unicode)
+            assert type(value) in (str, str)
         elif type_ == "symbol":
             assert isinstance(value, Exp)
         elif type_ == "integer":
-            assert type(value) in (int, long)
+            assert type(value) in (int, int)
         elif type_ == "boolean":
             assert type(value) == bool
         self.type, self.value = type_, value
@@ -53,7 +53,7 @@ class Literal(Exp):
         if self.type == "integer": return repr(self.value)
         if self.type == "symbol": return str(self.value)
         if self.type == "string": return c_format(self.value)
-        raise LogicError, "?"
+        raise LogicError("?")
     def isTrivial(self): return True
     def freeVariables(self): return set()
     allVariables = freeVariables
@@ -156,8 +156,8 @@ class Lambda(Exp):
         argset = set()
         for arg in args:
             if arg in argset:
-                raise ParserError, "'lambda' got two identically named " \
-                        "arguments"
+                raise ParserError("'lambda' got two identically named " \
+                        "arguments")
             argset.add(arg)
         self._free_cache = [set(), False]
     def __repr__(self):
@@ -218,7 +218,7 @@ def quote(node):
         assert node.type != "3d-symbol"
         return Literal(node.type, node.value)
     assert type(node) == list
-    return List(map(quote, node))
+    return List(list(map(quote, node)))
 
 def structure(node):
     """turns the old parse tree into a new one"""
@@ -228,25 +228,25 @@ def structure(node):
         return Literal(node.type, node.value)
     assert type(node) == list
     if not node:
-        raise ParserError, "Application missing method!"
+        raise ParserError("Application missing method!")
     if type(node[0]) == list:
-        return Application(structure(node[0]), *map(structure, node[1:]))
+        return Application(structure(node[0]), *list(map(structure, node[1:])))
     assert type(node[0]) == Token
     if node[0].isSymbol("quote"):
         return Literal("symbol", quote(node))
     if node[0].isSymbol("begin"):
-        return Begin(map(structure, node[1:]))
+        return Begin(list(map(structure, node[1:])))
     if node[0].isSymbol("if"):
         assert len(node) == 4
         return If(structure(node[1]), structure(node[2]), structure(node[3]))
     if node[0].isSymbol("lambda"):
         assert len(node) == 3
         assert type(node[1]) == list
-        return Lambda(map(structure, node[1]), structure(node[2]))
+        return Lambda(list(map(structure, node[1])), structure(node[2]))
     if node[0].isSymbol("set!"):
         assert len(node) == 3
         return SetBang(structure(node[1]), structure(node[2]))
     if node[0].type == "symbol":
         if node[0].value in KEYWORDS:
-            raise LogicError, "unhandled keyword '%s'" % node[0].value
-    return Application(structure(node[0]), *map(structure, node[1:]))
+            raise LogicError("unhandled keyword '%s'" % node[0].value)
+    return Application(structure(node[0]), *list(map(structure, node[1:])))
